@@ -1,0 +1,543 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>run_phase_partnered_DEB</title><meta name="generator" content="MATLAB 9.1"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2016-11-17"><meta name="DC.source" content="run_phase_partnered_DEB.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">DEB fun</a></li><li><a href="#2">1.0 Create base time series with mean 0</a></li><li><a href="#4">1.1 Adjust the mean</a></li><li><a href="#5">1.2 Add seasonal components</a></li><li><a href="#7">2.0 Plot body temperature and relative performance PDFs</a></li><li><a href="#14">3.0 run DEB model</a></li><li><a href="#16">run analyze_correlated_environment. Contains ScatteredInterpolation, compare_noise, etc.</a></li></ul></div><h2 id="1">DEB fun</h2><p><i>create temperature environments, run DEB model, various plots</i></p><p><b>Options</b></p><pre class="codeinput">clear
+close <span class="string">all</span>
+clc
+
+<span class="comment">% runPhasePartnered: get phase partnered times series? yes = 1, no = 0</span>
+runPhasePartnered = 0;
+    <span class="comment">% doSave: save results? 1=yes, 0=no</span>
+    doSave = 0;
+    <span class="comment">% doPlot: plot results? 1=yes, 0=no</span>
+    doPlot = 1;
+
+doPlotTbTPCfreq = 1;  <span class="comment">% plot Tb and relative performance PDF? yes = 1, no = 0</span>
+doSaveTbTPCfreq = 1;    <span class="comment">% save plots?</span>
+
+<span class="comment">% runDEB: run DEB model sims? 1=yes, 0=no</span>
+runDEB = 0;
+
+<span class="comment">% runACE: run analyze_correlated_environments? yes = 1, no = 0</span>
+runACE = 1;
+</pre><h2 id="2">1.0 Create base time series with mean 0</h2><p><i>Uses phase_partnered_timeseries.m (Gouhier synchrony package). If doSave, save in .mat file</i></p><p>SET: nyrs, sd, muPlus, seasonal_amp, nreps, nt, smpl_interval</p><pre class="codeinput">nyrs = 10;                          <span class="comment">% # years</span>
+tInterval = 1;                      <span class="comment">% sampling frequency per day eg tInterval = 1: 1 point per day, tInterval = 24: 24 points per day</span>
+rho = 1;                            <span class="comment">% rho: cross-correlation of time series; default = 1</span>
+gamma = 0;                          <span class="comment">% gamma: relationship between frequency and power: P(f)=1/f^gamma; -2 &lt; gamma &lt; 0: blue noise; 0 &lt; gamma &lt; 2: red noise</span>
+sd = 10;                             <span class="comment">% sd: std. deviation within each time series (original simulations = 3) as is, part 1 has to be run separately for ea sd</span>
+s_d = [0 1 3 5 10];                <span class="comment">% vector</span>
+mu = 0;                             <span class="comment">% mu: mean of each time series; default = 0</span>
+muPlus = [8 12 20 27];              <span class="comment">% muPlus: add to mean</span>
+seasonal_amp = linspace(0,10,4);    <span class="comment">% seasonal_amp: seasonal amplitudes</span>
+nreps = 10;                         <span class="comment">% nreps: # replicates</span>
+nt = floor(365.25*nyrs*tInterval);  <span class="comment">% number of time points</span>
+smpl_interval = 1;                  <span class="comment">% sampling interval (different than tInterval) 1 = daily, 1/24 = hourly</span>
+
+<span class="comment">% create datenum vector (for plotting)</span>
+t1 = datenum(<span class="string">'25-Sep-2010 07:00:00'</span>);   <span class="comment">% day 1 of real temp data</span>
+dtnum = t1:1/tInterval:addtodate(t1,nyrs,<span class="string">'year'</span>); dtnum = dtnum';
+
+<span class="keyword">if</span>(runPhasePartnered)
+</pre><pre class="codeinput">    <span class="keyword">for</span> k = 1:nreps
+        env = phase_partnered_timeseries (nt, rho, gamma, sd, mu, doSave);
+        env_0(:,k) = env;
+    <span class="keyword">end</span>
+    env = env_0;
+    <span class="keyword">if</span> (doSave)
+        fname = sprintf(<span class="string">'environment-env_plus_0.000-env_samp_0.000.mat'</span>);
+        save(fname, <span class="string">'env'</span>);
+    <span class="keyword">end</span>
+
+    <span class="keyword">if</span> (doPlot)
+        pname = sprintf(<span class="string">'environment- env plus 0.000; env samp 0.000.mat'</span>);
+        figure
+        plot_ts(dtnum(1:size(env,1)), env, <span class="string">'Body Temperature'</span>, pname)
+    <span class="keyword">end</span>
+</pre><h2 id="4">1.1 Adjust the mean</h2><p><i>Create new time series' with means set in muPlus. If doSave, save each new series in separate .mat files</i></p><pre class="codeinput">    <span class="keyword">if</span> doPlot
+        figure
+    <span class="keyword">end</span>
+    load(fname)
+    <span class="keyword">for</span> k = 1:length(muPlus)
+        envPlus = env + muPlus(k);
+        <span class="keyword">if</span> (doSave)
+            fname = sprintf(<span class="string">'environment-env_plus_%1.3f-env_samp_0.000.mat'</span>,muPlus(k));
+            save(fname, <span class="string">'envPlus'</span>);
+        <span class="keyword">end</span>
+        <span class="keyword">if</span> (doPlot)
+            pname = sprintf(<span class="string">'environment-env plus %1.3f, %1.3f, %1.3f, %1.3f; env samp 0.000'</span>,muPlus(1:4));
+            plot_ts(dtnum(1:size(env,1)), envPlus, <span class="string">'Body Temperature'</span>, pname)
+            ylim([-2 42])
+            hold <span class="string">on</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+</pre><h2 id="5">1.2 Add seasonal components</h2><p><i>Create new time series' from 1.1 with seasonal components set in seasonal_amp. If doSave, save each new series in separate .mat files</i></p><pre class="codeinput">    time = 1:tInterval:nt;
+    freq=1;
+    sampling_freq=1/(nt/nyrs);
+
+    <span class="keyword">for</span> l = 1:length(seasonal_amp)
+        s(:,l) = seasonal_amp(l) * cos(2*pi*freq*time*sampling_freq);
+    <span class="keyword">end</span>
+
+    <span class="keyword">if</span> doPlot
+        figure
+        hold <span class="string">on</span>
+    <span class="keyword">end</span>
+    <span class="keyword">for</span> k = 1:length(muPlus)
+        fname = sprintf(<span class="string">'environment-env_plus_%1.3f-env_samp_0.000.mat'</span>, muPlus(k));
+        load(fname)
+
+        <span class="keyword">for</span> l = 1:length(seasonal_amp)
+            envSeason = bsxfun(@plus,envPlus,s(:,l));
+
+            <span class="keyword">if</span> (doSave)
+                fname = sprintf(<span class="string">'environment-env_plus_%1.3f-env_samp_%1.3f.mat'</span>, muPlus(k), seasonal_amp(l));
+                save(fname, <span class="string">'envSeason'</span>);
+            <span class="keyword">end</span>
+            <span class="keyword">if</span> (doPlot)
+                pname = sprintf(<span class="string">'environment-env plus %1.3f-env samp %1.3f'</span>, muPlus(k), seasonal_amp(l));
+                subplot(length(seasonal_amp) , 1 , l)
+                plot_ts(dtnum(1:size(env,1)), envSeason, <span class="string">'Body Temperature'</span>, pname)
+                ylim([-15 50])
+                hold <span class="string">on</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+</pre><pre class="codeinput"><span class="keyword">end</span>
+</pre><h2 id="7">2.0 Plot body temperature and relative performance PDFs</h2><pre class="codeinput"><span class="keyword">if</span> doPlotTbTPCfreq
+</pre><p><b>Extract data by filename organization</b></p><p><i>First by seasonal amplitude, then by mean, then by standard deviation</i></p><pre class="codeinput">    <span class="keyword">for</span> i = 1:length(seasonal_amp)
+        <span class="keyword">for</span> j = 1:length(muPlus)
+            <span class="keyword">for</span> k = 1:length(s_d)
+</pre><pre class="codeinput">                <span class="comment">% extract data by filename organization</span>
+                fname = sprintf(<span class="string">'DEB_out-env_plus_%1.3f-env_samp_%1.3f-env_X_%1.3f_%dsdNoise.mat'</span>, <span class="keyword">...</span>
+                muPlus(j), seasonal_amp(i), 2.620, s_d(k));
+                load(fname)
+                data = DEB_out(1);    <span class="comment">% only extracts first replicate</span>
+
+                [~, ~, ~, ~, ~, ~, ~, Tb_out] = getRates(data, smpl_interval);
+                TP_out = getTPC(1,Tb_out);
+</pre><p><b>Plot body temperature PDF</b></p><pre class="codeinput">                tbedge = [-20:3:70];
+
+                figure
+                histogram(Tb_out, tbedge, <span class="string">'Normalization'</span>, <span class="string">'pdf'</span>, <span class="string">'EdgeColor'</span>, <span class="string">'none'</span>)
+                ylim([0 0.33])
+                hold <span class="string">on</span>
+<span class="comment">%                 pd = fitdist(Tb_out', 'Normal');</span>
+<span class="comment">%                 x = xlim;</span>
+<span class="comment">%                 x = x(1):0.1:x(2);</span>
+<span class="comment">%                 y = pdf(pd,x);</span>
+<span class="comment">%                 plot(x,y,'LineWidth',2)</span>
+                xlabel(<span class="string">'body temperature'</span>)
+                ylabel(<span class="string">'probability density function'</span>);
+                ax = gca;  set(ax,<span class="string">'FontSize'</span>,12);
+
+                mTitle = sprintf(<span class="string">'Tb %1.3f; amp %1.3f; sd %1.3f'</span>, muPlus(j), seasonal_amp(i), s_d(k));
+                tits = mtit(mTitle, <span class="string">'fontsize'</span>, 12);
+                figname = sprintf(<span class="string">'TbPDF_Tb_%1.3f-amp_%1.3f-sd_%1.3f.tiff'</span>, muPlus(j), seasonal_amp(i), s_d(k));
+
+                <span class="keyword">if</span> doSaveTbTPCfreq
+                    matfigname = sprintf(<span class="string">'TbPDF_Tb_%1.3f-amp_%1.3f-sd_%1.3f.fig'</span>, muPlus(j), seasonal_amp(i), s_d(k));
+                    saveas(gcf, figname)
+                    saveas(gcf, matfigname)
+                <span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="run_phase_partnered_DEB_01.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_03.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_05.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_07.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_09.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_11.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_13.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_15.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_17.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_19.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_21.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_23.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_25.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_27.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_29.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_31.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_33.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_35.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_37.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_39.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_41.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_43.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_45.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_47.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_49.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_51.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_53.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_55.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_57.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_59.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_61.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_63.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_65.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_67.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_69.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_71.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_73.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_75.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_77.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_79.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_81.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_83.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_85.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_87.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_89.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_91.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_93.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_95.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_97.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_99.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_101.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_103.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_105.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_107.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_109.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_111.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_113.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_115.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_117.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_119.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_121.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_123.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_125.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_127.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_129.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_131.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_133.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_135.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_137.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_139.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_141.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_143.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_145.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_147.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_149.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_151.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_153.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_155.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_157.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_159.png" style="width:182px;height:158px;" alt=""> <p><b>Plot performance PDF</b></p><pre class="codeinput">                tpedge = [0:0.03:1];
+
+                figure
+                tp = getTPC(1,Tb_out);
+                histogram(tp, tpedge, <span class="string">'Normalization'</span>,  <span class="string">'probability'</span>, <span class="string">'EdgeColor'</span>, <span class="string">'none'</span>);
+                ylim([0 0.4])
+                hold <span class="string">on</span>
+
+                xlabel(<span class="string">'performance'</span>)
+                ylabel(<span class="string">'probability density function'</span>);
+                ax = gca; set(ax,<span class="string">'FontSize'</span>,12);
+                mTitle = sprintf(<span class="string">'performance %1.3f; amp %1.3f; sd %1.3f'</span>, muPlus(j), seasonal_amp(i), s_d(k));
+                tits = mtit(mTitle, <span class="string">'fontsize'</span>, 12);
+                figname = sprintf(<span class="string">'performancePDF_Tb_%1.3f-amp_%1.3f-sd_%1.3f.tiff'</span>, muPlus(j), seasonal_amp(i), s_d(k));
+
+                <span class="keyword">if</span> doSaveTbTPCfreq
+                    matfigname = sprintf(<span class="string">'performancePDF_Tb_%1.3f-amp_%1.3f-sd_%1.3f.fig'</span>, muPlus(j), seasonal_amp(i), s_d(k));
+                    saveas(gcf, figname)
+                    saveas(gcf, matfigname)
+                <span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="run_phase_partnered_DEB_02.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_04.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_06.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_08.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_10.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_12.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_14.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_16.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_18.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_20.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_22.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_24.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_26.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_28.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_30.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_32.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_34.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_36.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_38.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_40.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_42.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_44.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_46.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_48.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_50.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_52.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_54.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_56.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_58.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_60.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_62.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_64.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_66.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_68.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_70.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_72.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_74.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_76.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_78.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_80.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_82.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_84.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_86.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_88.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_90.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_92.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_94.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_96.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_98.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_100.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_102.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_104.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_106.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_108.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_110.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_112.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_114.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_116.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_118.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_120.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_122.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_124.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_126.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_128.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_130.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_132.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_134.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_136.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_138.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_140.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_142.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_144.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_146.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_148.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_150.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_152.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_154.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_156.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_158.png" style="width:182px;height:158px;" alt=""> <img vspace="5" hspace="5" src="run_phase_partnered_DEB_160.png" style="width:182px;height:158px;" alt=""> <pre class="codeinput">            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+</pre><pre class="codeinput"><span class="keyword">end</span>
+</pre><h2 id="14">3.0 run DEB model</h2><p><i>Set food values (here constant)</i></p><p><i>half saturation coefficient K = 6.12</i></p><pre class="codeinput">    <span class="comment">% based on percentiles</span>
+    <span class="comment">%     chl_low = 3.55; % 33rd percentile of bootstrapped (n=20) GlobColour SH daiy, f = 0.367</span>
+    <span class="comment">%     chl_med = 8.32; % 66th percentile, f = 0.576</span>
+    <span class="comment">%     chl_hi = 44.58; % 99th percentile, f = 0.879</span>
+
+    <span class="comment">% based on relative to f</span>
+    <span class="comment">% use X = getX(f,K) to get food value by f value</span>
+    chl_low = 2.62; <span class="comment">% f = 0.3</span>
+    <span class="comment">%     chl_low = 4.08; % f = 0.4</span>
+    chl_med = 6.12; <span class="comment">% f = 0.5</span>
+    chl_hi = 55.08; <span class="comment">% f = 0.9</span>
+
+    <span class="comment">% pack food densities</span>
+    foodDensity = [chl_low chl_med chl_hi];
+</pre><p><i>Run model</i></p><pre class="codeinput"><span class="comment">% Run DEB model</span>
+<span class="keyword">if</span> runDEB
+    <span class="comment">% Model parameters (set outside DEB model function to save time):</span>
+    <span class="comment">% load and set structure with metaData, par data and auxiliary data (files saved from last estimation routine)</span>
+    load(<span class="string">'metaData.mat'</span>)
+    load(<span class="string">'data.mat'</span>)
+    <span class="comment">% load('auxData.mat')</span>
+    estimData.metaData = metaData;  estimData.data = data;
+
+    <span class="comment">% set par structure</span>
+    [par, txtPar] = set_pars(smpl_interval, estimData);
+
+    <span class="keyword">for</span> m = 1:length(foodDensity) <span class="comment">% # of food densities</span>
+        Xenv = repmat(foodDensity(m),nt,1);
+        tic
+        <span class="comment">% set initial condition parameter stucture (food dependent)</span>
+        initpars = get_initpars(foodDensity(m), par);
+
+        <span class="keyword">for</span> k = 1:length(muPlus)
+            fname = sprintf(<span class="string">'environment-env_plus_%1.3f-env_samp_0.000_10sdNoise.mat'</span>, muPlus(k));
+            load(fname)
+            <span class="keyword">for</span> l = 1:length(seasonal_amp)
+                fname = sprintf(<span class="string">'environment-env_plus_%1.3f-env_samp_%1.3f_10sdNoise.mat'</span>, muPlus(k), seasonal_amp(l));
+                load(fname)
+                <span class="keyword">for</span> n = 1:nreps
+                    Tbenv = envSeason(:,n);
+                    out = run_DEB_071116(par, initpars, smpl_interval, Tbenv, Xenv, dtnum, 0);
+                    DEB_out(n) = out;
+                <span class="keyword">end</span>
+                fname = sprintf(<span class="string">'DEB_out-env_plus_%1.3f-env_samp_%1.3f-env_X_%1.3f_10sdNoise.mat'</span>, muPlus(k), seasonal_amp(l), foodDensity(m));
+                save(fname,<span class="string">'DEB_out'</span>)
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><h2 id="16">run analyze_correlated_environment. Contains ScatteredInterpolation, compare_noise, etc.</h2><p>names = analyze_correlated_environment(gamma, muPlus, seasonal_amp);</p><pre class="codeinput"><span class="comment">% if runACE</span>
+<span class="comment">% analyze_correlated_environment</span>
+<span class="comment">% end</span>
+</pre><p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2016b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% DEB fun
+% _create temperature environments, run DEB model, various plots_
+% 
+% *Options*
+
+clear
+close all
+clc
+
+% runPhasePartnered: get phase partnered times series? yes = 1, no = 0
+runPhasePartnered = 0;
+    % doSave: save results? 1=yes, 0=no
+    doSave = 0;
+    % doPlot: plot results? 1=yes, 0=no
+    doPlot = 1;
+    
+doPlotTbTPCfreq = 1;  % plot Tb and relative performance PDF? yes = 1, no = 0
+doSaveTbTPCfreq = 1;    % save plots?
+
+% runDEB: run DEB model sims? 1=yes, 0=no
+runDEB = 0;
+
+% runACE: run analyze_correlated_environments? yes = 1, no = 0
+runACE = 1;
+%% 1.0 Create base time series with mean 0
+% _Uses phase_partnered_timeseries.m (Gouhier synchrony package). If doSave, 
+% save in .mat file_
+% 
+% SET: nyrs, sd, muPlus, seasonal_amp, nreps, nt, smpl_interval
+
+nyrs = 10;                          % # years
+tInterval = 1;                      % sampling frequency per day eg tInterval = 1: 1 point per day, tInterval = 24: 24 points per day
+rho = 1;                            % rho: cross-correlation of time series; default = 1
+gamma = 0;                          % gamma: relationship between frequency and power: P(f)=1/f^gamma; -2 < gamma < 0: blue noise; 0 < gamma < 2: red noise
+sd = 10;                             % sd: std. deviation within each time series (original simulations = 3) as is, part 1 has to be run separately for ea sd
+s_d = [0 1 3 5 10];                % vector 
+mu = 0;                             % mu: mean of each time series; default = 0
+muPlus = [8 12 20 27];              % muPlus: add to mean
+seasonal_amp = linspace(0,10,4);    % seasonal_amp: seasonal amplitudes
+nreps = 10;                         % nreps: # replicates
+nt = floor(365.25*nyrs*tInterval);  % number of time points
+smpl_interval = 1;                  % sampling interval (different than tInterval) 1 = daily, 1/24 = hourly
+
+% create datenum vector (for plotting)
+t1 = datenum('25-Sep-2010 07:00:00');   % day 1 of real temp data
+dtnum = t1:1/tInterval:addtodate(t1,nyrs,'year'); dtnum = dtnum';
+
+if(runPhasePartnered)    
+    for k = 1:nreps
+        env = phase_partnered_timeseries (nt, rho, gamma, sd, mu, doSave);
+        env_0(:,k) = env;
+    end
+    env = env_0;
+    if (doSave)
+        fname = sprintf('environment-env_plus_0.000-env_samp_0.000.mat');
+        save(fname, 'env');
+    end
+
+    if (doPlot)
+        pname = sprintf('environment- env plus 0.000; env samp 0.000.mat');
+        figure
+        plot_ts(dtnum(1:size(env,1)), env, 'Body Temperature', pname)
+    end
+%% 1.1 Adjust the mean
+% _Create new time series' with means set in muPlus. If doSave, save each new 
+% series in separate .mat files_
+
+    if doPlot
+        figure
+    end
+    load(fname)
+    for k = 1:length(muPlus)
+        envPlus = env + muPlus(k);
+        if (doSave)
+            fname = sprintf('environment-env_plus_%1.3f-env_samp_0.000.mat',muPlus(k));
+            save(fname, 'envPlus');
+        end
+        if (doPlot)
+            pname = sprintf('environment-env plus %1.3f, %1.3f, %1.3f, %1.3f; env samp 0.000',muPlus(1:4));
+            plot_ts(dtnum(1:size(env,1)), envPlus, 'Body Temperature', pname)
+            ylim([-2 42])
+            hold on
+        end
+    end
+%% 1.2 Add seasonal components
+% _Create new time series' from 1.1 with seasonal components set in seasonal_amp. 
+% If doSave, save each new series in separate .mat files_
+
+    time = 1:tInterval:nt;
+    freq=1;
+    sampling_freq=1/(nt/nyrs);
+    
+    for l = 1:length(seasonal_amp)
+        s(:,l) = seasonal_amp(l) * cos(2*pi*freq*time*sampling_freq);
+    end
+    
+    if doPlot
+        figure
+        hold on
+    end
+    for k = 1:length(muPlus)
+        fname = sprintf('environment-env_plus_%1.3f-env_samp_0.000.mat', muPlus(k));
+        load(fname)
+        
+        for l = 1:length(seasonal_amp)
+            envSeason = bsxfun(@plus,envPlus,s(:,l));
+            
+            if (doSave)
+                fname = sprintf('environment-env_plus_%1.3f-env_samp_%1.3f.mat', muPlus(k), seasonal_amp(l));
+                save(fname, 'envSeason');
+            end
+            if (doPlot)
+                pname = sprintf('environment-env plus %1.3f-env samp %1.3f', muPlus(k), seasonal_amp(l));
+                subplot(length(seasonal_amp) , 1 , l)
+                plot_ts(dtnum(1:size(env,1)), envSeason, 'Body Temperature', pname)
+                ylim([-15 50])
+                hold on
+            end
+        end
+    end
+end
+%% 2.0 Plot body temperature and relative performance PDFs
+
+if doPlotTbTPCfreq
+%% 
+% *Extract data by filename organization*
+% 
+% _First by seasonal amplitude, then by mean, then by standard deviation_
+
+    for i = 1:length(seasonal_amp)
+        for j = 1:length(muPlus)
+            for k = 1:length(s_d)
+                % extract data by filename organization
+                fname = sprintf('DEB_out-env_plus_%1.3f-env_samp_%1.3f-env_X_%1.3f_%dsdNoise.mat', ...
+                muPlus(j), seasonal_amp(i), 2.620, s_d(k));
+                load(fname)
+                data = DEB_out(1);    % only extracts first replicate
+                
+                [~, ~, ~, ~, ~, ~, ~, Tb_out] = getRates(data, smpl_interval);
+                TP_out = getTPC(1,Tb_out);
+%% 
+% *Plot body temperature PDF*
+
+                tbedge = [-20:3:70];
+
+                figure
+                histogram(Tb_out, tbedge, 'Normalization', 'pdf', 'EdgeColor', 'none')
+                ylim([0 0.33])
+                hold on
+%                 pd = fitdist(Tb_out', 'Normal');
+%                 x = xlim;
+%                 x = x(1):0.1:x(2);
+%                 y = pdf(pd,x);
+%                 plot(x,y,'LineWidth',2)
+                xlabel('body temperature')
+                ylabel('probability density function');
+                ax = gca;  set(ax,'FontSize',12);
+                
+                mTitle = sprintf('Tb %1.3f; amp %1.3f; sd %1.3f', muPlus(j), seasonal_amp(i), s_d(k));
+                tits = mtit(mTitle, 'fontsize', 12);
+                figname = sprintf('TbPDF_Tb_%1.3f-amp_%1.3f-sd_%1.3f.tiff', muPlus(j), seasonal_amp(i), s_d(k));
+               
+                if doSaveTbTPCfreq
+                    matfigname = sprintf('TbPDF_Tb_%1.3f-amp_%1.3f-sd_%1.3f.fig', muPlus(j), seasonal_amp(i), s_d(k));
+                    saveas(gcf, figname)
+                    saveas(gcf, matfigname)
+                end
+%% 
+% *Plot performance PDF*
+
+                tpedge = [0:0.03:1];
+                
+                figure
+                tp = getTPC(1,Tb_out);
+                histogram(tp, tpedge, 'Normalization',  'probability', 'EdgeColor', 'none');
+                ylim([0 0.4])
+                hold on
+
+                xlabel('performance')
+                ylabel('probability density function');
+                ax = gca; set(ax,'FontSize',12);
+                mTitle = sprintf('performance %1.3f; amp %1.3f; sd %1.3f', muPlus(j), seasonal_amp(i), s_d(k));
+                tits = mtit(mTitle, 'fontsize', 12);
+                figname = sprintf('performancePDF_Tb_%1.3f-amp_%1.3f-sd_%1.3f.tiff', muPlus(j), seasonal_amp(i), s_d(k));
+                
+                if doSaveTbTPCfreq
+                    matfigname = sprintf('performancePDF_Tb_%1.3f-amp_%1.3f-sd_%1.3f.fig', muPlus(j), seasonal_amp(i), s_d(k));
+                    saveas(gcf, figname)
+                    saveas(gcf, matfigname)
+                end
+            end
+        end
+    end
+end
+%% 3.0 run DEB model
+% _Set food values (here constant)_
+% 
+% _half saturation coefficient K = 6.12_
+
+    % based on percentiles
+    %     chl_low = 3.55; % 33rd percentile of bootstrapped (n=20) GlobColour SH daiy, f = 0.367
+    %     chl_med = 8.32; % 66th percentile, f = 0.576
+    %     chl_hi = 44.58; % 99th percentile, f = 0.879
+    
+    % based on relative to f
+    % use X = getX(f,K) to get food value by f value
+    chl_low = 2.62; % f = 0.3
+    %     chl_low = 4.08; % f = 0.4
+    chl_med = 6.12; % f = 0.5
+    chl_hi = 55.08; % f = 0.9
+    
+    % pack food densities
+    foodDensity = [chl_low chl_med chl_hi];
+%% 
+% _Run model_
+
+% Run DEB model
+if runDEB
+    % Model parameters (set outside DEB model function to save time):
+    % load and set structure with metaData, par data and auxiliary data (files saved from last estimation routine)
+    load('metaData.mat')
+    load('data.mat')
+    % load('auxData.mat')
+    estimData.metaData = metaData;  estimData.data = data;
+    
+    % set par structure
+    [par, txtPar] = set_pars(smpl_interval, estimData);
+    
+    for m = 1:length(foodDensity) % # of food densities
+        Xenv = repmat(foodDensity(m),nt,1);
+        tic
+        % set initial condition parameter stucture (food dependent)
+        initpars = get_initpars(foodDensity(m), par);
+        
+        for k = 1:length(muPlus)
+            fname = sprintf('environment-env_plus_%1.3f-env_samp_0.000_10sdNoise.mat', muPlus(k));
+            load(fname)
+            for l = 1:length(seasonal_amp)
+                fname = sprintf('environment-env_plus_%1.3f-env_samp_%1.3f_10sdNoise.mat', muPlus(k), seasonal_amp(l));
+                load(fname)
+                for n = 1:nreps
+                    Tbenv = envSeason(:,n);
+                    out = run_DEB_071116(par, initpars, smpl_interval, Tbenv, Xenv, dtnum, 0);
+                    DEB_out(n) = out;
+                end
+                fname = sprintf('DEB_out-env_plus_%1.3f-env_samp_%1.3f-env_X_%1.3f_10sdNoise.mat', muPlus(k), seasonal_amp(l), foodDensity(m));
+                save(fname,'DEB_out')
+            end
+        end
+    end
+end
+%% run analyze_correlated_environment. Contains ScatteredInterpolation, compare_noise, etc.
+% names = analyze_correlated_environment(gamma, muPlus, seasonal_amp);
+
+% if runACE
+% analyze_correlated_environment
+% end
+##### SOURCE END #####
+--></body></html>
