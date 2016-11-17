@@ -3,3 +3,5 @@
 % K = half sat coeff
 function X = getX(f,K)
 X = f*K/(1-f);
+
+% yea
